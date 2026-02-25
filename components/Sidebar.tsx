@@ -14,6 +14,16 @@ const navItems = [
   { href: "/reports", label: "Analytics", icon: ChartBar },
 ];
 
+/**
+ * Client-side sidebar UI with navigation, user display, and logout handling.
+ *
+ * Loads the current user from localStorage on mount, highlights the active navigation
+ * item based on the current pathname, and clears localStorage then navigates to
+ * "/login" when logout is invoked.
+ *
+ * @returns The sidebar JSX element containing branding, navigation links, a sync badge,
+ * and the logged-in user's display with a logout button.
+ */
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();

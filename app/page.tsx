@@ -8,6 +8,13 @@ import { syncEngine } from "@/lib/sync";
 
 type CartItem = { product: LocalProduct; qty: number };
 
+/**
+ * Renders the Point of Sale page allowing product browsing, cart management, and completing sales.
+ *
+ * Manages product loading and periodic refresh, search/filtering, cart state and quantity updates, MPesa reference input, and finalizes sales by recording the sale, updating product stock atomically, and enqueuing a sync task.
+ *
+ * @returns The React element for the POS page.
+ */
 export default function POSPage() {
   const [products, setProducts] = useState<LocalProduct[]>([]);
   const [loading, setLoading] = useState(true);

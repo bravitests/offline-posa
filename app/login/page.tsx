@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignIn } from "@phosphor-icons/react";
 
+/**
+ * Render the login page UI and handle user authentication.
+ *
+ * Renders a login form with phone number and passcode fields, displays validation and server errors, manages loading state, and submits credentials to /api/auth/login. On successful authentication the user object is stored in localStorage and the router navigates to the root route; network or server errors are surfaced via the visible error message.
+ *
+ * @returns The rendered login page as a JSX element
+ */
 export default function LoginPage() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState("");

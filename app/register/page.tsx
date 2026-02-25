@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserPlus } from "@phosphor-icons/react";
 
+/**
+ * Renders the user registration page and handles account creation.
+ *
+ * This component displays a registration form for full name, phone number,
+ * passcode, and passcode confirmation. On form submission it sends the
+ * form data to /api/auth/register, shows a loading state while the request
+ * is in progress, and displays any error messages returned by the API or
+ * a network error message. When registration succeeds the returned user
+ * object is stored in localStorage under the "user" key and the router
+ * navigates to the home page ("/").
+ *
+ * @returns The registration page UI as a React element.
+ */
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");

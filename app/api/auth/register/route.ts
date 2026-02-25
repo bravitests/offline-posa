@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+/**
+ * Handle registration requests by validating input, creating a new user, and returning the created user's basic info.
+ *
+ * Validates that `fullName`, `phoneNumber`, `passcode`, and `repeatPasscode` are present, that the passcodes match and meet a minimum length, and that the phone number is not already registered. On success, creates the user with a hashed passcode.
+ *
+ * @param request - Incoming Request whose JSON body must include `fullName`, `phoneNumber`, `passcode`, and `repeatPasscode`
+ * @returns A NextResponse JSON object. On success: `{ status: "success", user: { id, fullName, phoneNumber } }`. On validation or conflict: `{ status: "error", message }` with HTTP status 400 or 409. On unexpected failure: `{ status: "error", message }` with HTTP status 500.
+ */
 export async function POST(request: Request) {
     try {
         const { fullName, phoneNumber, passcode, repeatPasscode } = await request.json();
