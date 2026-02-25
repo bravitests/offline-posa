@@ -10,16 +10,62 @@ export async function PUT(
         const body = await request.json();
         const { name, price, stock, version: incomingVersion } = body;
 
-        const currentProduct = await prisma.product.findUnique({
-            where: { id },
-        });
-
-        if (!currentProduct) {
-            return NextResponse.json({ status: "error", message: "Product not found" }, { status: 404 });
+        // Validate incoming payload
+        if (typeof name !== "string" || name.trim() === "") {
+            return NextResponse.json(
+                { status: "error", message: "name must be a non-empty string" },
+                { status: 400 }
+            );
         }
 
-        // Version-gated conflict resolution
-        if (incomingVersion !== currentProduct.version) {
+        if (typeof price !== "number" || price < 0) {
+            return NextResponse.json(
+                { status: "error", message: "price must be a number >= 0" },
+                { status: 400 }
+            );
+        }
+
+        if (typeof stock !== "number" || stock < 0 || !Number.isInteger(stock)) {
+            return NextResponse.json(
+                { status: "error", message: "stock must be a non-negative integer" },
+                { status: 400 }
+            );
+        }
+
+        if (incomingVersion !== undefined && typeof incomingVersion !== "number") {
+            return NextResponse.json(
+                { status: "error", message: "version must be a number if provided" },
+                { status: 400 }
+            );
+        }
+
+        // Atomic conditional update: version-gated with version check in where clause
+        const updateResult = await prisma.product.updateMany({
+            where: {
+                id,
+                version: incomingVersion,
+            },
+            data: {
+                name,
+                price,
+                stock,
+                version: {
+                    increment: 1,
+                },
+            },
+        });
+
+        // Check if update succeeded (affected rows > 0)
+        if (updateResult.count === 0) {
+            // Fetch current product to return conflict details
+            const currentProduct = await prisma.product.findUnique({
+                where: { id },
+            });
+
+            if (!currentProduct) {
+                return NextResponse.json({ status: "error", message: "Product not found" }, { status: 404 });
+            }
+
             return NextResponse.json(
                 {
                     status: "conflict",
@@ -31,14 +77,9 @@ export async function PUT(
             );
         }
 
-        const updatedProduct = await prisma.product.update({
+        // Fetch the updated product to return to client
+        const updatedProduct = await prisma.product.findUnique({
             where: { id },
-            data: {
-                name,
-                price,
-                stock,
-                version: currentProduct.version + 1,
-            },
         });
 
         return NextResponse.json({ status: "success", product: updatedProduct });
