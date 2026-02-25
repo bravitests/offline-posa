@@ -4,12 +4,21 @@ import { useEffect, useState } from "react";
 import { db, type LocalProduct } from "@/lib/db";
 import { Plus, PencilSimple, Trash } from "@phosphor-icons/react";
 import { syncEngine } from "@/lib/sync";
+import AddProductModal from "@/components/AddProductModal";
 
+/**
+ * Renders the Inventory page UI and manages local product state, editing, persistence, and sync scheduling.
+ *
+ * Loads products from the local database on mount and refreshes the list every 5 seconds. Provides inline editing for product name, price, and stock; saving an edit updates the product's version and updatedAt timestamp, performs an atomic transaction that writes the product and a corresponding syncQueue entry, and then starts the sync engine only after the transaction commits. Exposes an "Add Product" modal that, when a product is added, appends it to the in-page product list.
+ *
+ * @returns The Inventory page React element.
+ */
 export default function InventoryPage() {
     const [products, setProducts] = useState<LocalProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<Partial<LocalProduct>>({});
+    const [showAddModal, setShowAddModal] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -51,7 +60,7 @@ export default function InventoryPage() {
             await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
                 await tx.products.put(updated);
                 await tx.syncQueue.add({
-                    id: `update-${updated.id}-${Date.now()}`,
+                    id: `update-${updated.id}-${crypto.randomUUID()}`,
                     type: "PRODUCT_UPDATE",
                     payload: updated,
                     retries: 0,
@@ -76,7 +85,7 @@ export default function InventoryPage() {
                     <h1 className="page-title">Inventory</h1>
                     <p className="page-subtitle">Manage stock levels and product pricing.</p>
                 </div>
-                <button className="btn-primary">
+                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={16} weight="bold" /> Add Product
                 </button>
             </div>
@@ -166,6 +175,12 @@ export default function InventoryPage() {
                     </table>
                 </div>
             )}
+
+            <AddProductModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onProductAdded={(product) => setProducts((prev) => [...prev, product])}
+            />
         </div>
     );
 }
