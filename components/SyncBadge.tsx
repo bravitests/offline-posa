@@ -19,10 +19,16 @@ export default function SyncBadge() {
 
     useEffect(() => {
         const update = async () => {
-            if (!navigator.onLine) { setStatus("offline"); return; }
-            const count = await db.syncQueue.count();
-            setPendingCount(count);
-            setStatus(count > 0 ? "pending" : "synced");
+            try {
+                if (!navigator.onLine) { setStatus("offline"); return; }
+                setStatus("syncing");
+                const count = await db.syncQueue.count();
+                setPendingCount(count);
+                setStatus(count > 0 ? "pending" : "synced");
+            } catch (error) {
+                console.error("SyncBadge update error:", error);
+                setStatus("offline");
+            }
         };
 
         const iv = setInterval(update, 3000);

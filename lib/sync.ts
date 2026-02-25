@@ -28,6 +28,7 @@ class SyncEngine {
 
             for (const item of items) {
                 if (!navigator.onLine) break;
+                if (item.failed) continue; // Skip items that exceeded max retries
 
                 const success = await this.syncItem(item);
                 if (success) {
@@ -37,8 +38,12 @@ class SyncEngine {
                     const nextRetry = item.retries + 1;
                     if (nextRetry >= MAX_RETRIES) {
                         console.error(`Max retries reached for sync item ${item.id}`);
-                        // Keep in queue but stop retrying aggressively? 
-                        // Or just leave it for manual retry.
+                        await db.syncQueue.update(item.id, {
+                            retries: nextRetry,
+                            lastAttempt: Date.now(),
+                            failed: true,
+                        });
+                        continue;
                     }
                     await db.syncQueue.update(item.id, {
                         retries: nextRetry,
@@ -84,7 +89,7 @@ class SyncEngine {
                 if (item.type === "PRODUCT_UPDATE") {
                     await db.products.put({
                         ...result.serverData,
-                        updatedAt: Date.now()
+                        updatedAt: result.serverData.updatedAt || Date.now()
                     });
                     // Discard the failed update as it's stale
                     return true;
