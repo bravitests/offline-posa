@@ -17,7 +17,7 @@ async function main() {
     console.log("Seeding products...");
     for (const product of products) {
         await prisma.product.upsert({
-            where: { id: product.name }, // Hackish but works for seeding if we use name as ID for a sec or just create
+            where: { name: product.name },
             update: {},
             create: {
                 name: product.name,

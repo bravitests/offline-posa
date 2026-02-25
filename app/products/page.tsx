@@ -30,14 +30,42 @@ export default function InventoryPage() {
     const saveEdit = async () => {
         if (!editingId || !editValues.name) return;
         try {
-            const updated = { ...editValues, updatedAt: Date.now() } as LocalProduct;
-            await db.products.put(updated);
-            await db.syncQueue.add({ id: `update-${updated.id}-${Date.now()}`, type: "PRODUCT_UPDATE", payload: updated, retries: 0, lastAttempt: 0 });
+            // Fetch existing product from state
+            const existingProduct = products.find((p) => p.id === editingId);
+            if (!existingProduct) {
+                console.error(`Product ${editingId} not found`);
+                return;
+            }
+
+            // Construct complete updated product with version bump
+            const updated: LocalProduct = {
+                ...existingProduct,
+                name: editValues.name,
+                price: editValues.price ?? existingProduct.price,
+                stock: editValues.stock ?? existingProduct.stock,
+                version: existingProduct.version + 1,
+                updatedAt: Date.now(),
+            };
+
+            // Save to database and sync queue in a single atomic transaction
+            await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
+                await tx.products.put(updated);
+                await tx.syncQueue.add({
+                    id: `update-${updated.id}-${Date.now()}`,
+                    type: "PRODUCT_UPDATE",
+                    payload: updated,
+                    retries: 0,
+                    lastAttempt: 0,
+                });
+            });
+
+            // Only start sync after transaction successfully commits
             syncEngine?.startSync();
             setEditingId(null);
+            setEditValues({});
             setProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p));
         } catch (err) {
-            console.error(err);
+            console.error("Product update error:", err);
         }
     };
 

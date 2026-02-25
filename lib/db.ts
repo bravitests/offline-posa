@@ -30,6 +30,7 @@ export interface SyncQueueItem {
     payload: any;
     retries: number;
     lastAttempt: number;
+    failed?: boolean;
 }
 
 export class POSDatabase extends Dexie {
@@ -42,7 +43,7 @@ export class POSDatabase extends Dexie {
         this.version(1).stores({
             products: "id, name, updatedAt, version",
             sales: "id, createdAt, synced",
-            syncQueue: "id, type, lastAttempt",
+            syncQueue: "id, type, lastAttempt, failed",
         });
     }
 }

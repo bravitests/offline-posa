@@ -60,15 +60,29 @@ export default function POSPage() {
       items: cart.map((i) => ({ productId: i.product.id, qty: i.qty, price: i.product.price })),
     };
     try {
-      await db.sales.add(saleData as any);
-      for (const i of cart)
-        await db.products.update(i.product.id, { stock: i.product.stock - i.qty });
-      await db.syncQueue.add({ id: saleId, type: "SALE", payload: saleData, retries: 0, lastAttempt: 0 });
+      // Wrap all writes in a single atomic transaction
+      await db.transaction('rw', db.sales, db.products, db.syncQueue, async (tx) => {
+        // Add sale
+        await tx.sales.add(saleData as any);
+
+        // Update product stock
+        for (const i of cart) {
+          await tx.products.update(i.product.id, { stock: i.product.stock - i.qty });
+        }
+
+        // Add to sync queue
+        await tx.syncQueue.add({ id: saleId, type: "SALE", payload: saleData, retries: 0, lastAttempt: 0 });
+      });
+
+      // Only start sync after transaction successfully commits
       syncEngine?.startSync();
-      setCart([]); setMpesaCode(""); setIsSuccess(true);
+      setCart([]);
+      setMpesaCode("");
+      setIsSuccess(true);
       setTimeout(() => setIsSuccess(false), 3000);
     } catch (err) {
-      console.error(err);
+      console.error("Sale completion error:", err);
+      // Transaction rolled back on error, database state is consistent
     }
   };
 
