@@ -4,8 +4,23 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
     try {
-        const { fullName, phoneNumber, passcode, repeatPasscode } = await request.json();
+        let { fullName, phoneNumber, passcode, repeatPasscode } = await request.json();
 
+        // Type validation and normalization
+        if (typeof fullName !== "string" || typeof phoneNumber !== "string" || 
+            typeof passcode !== "string" || typeof repeatPasscode !== "string") {
+            return NextResponse.json(
+                { status: "error", message: "All fields must be strings" },
+                { status: 400 }
+            );
+        }
+
+        fullName = fullName.trim();
+        phoneNumber = phoneNumber.replace(/\D/g, "");
+        passcode = passcode.trim();
+        repeatPasscode = repeatPasscode.trim();
+
+        // Validation after normalization
         if (!fullName || !phoneNumber || !passcode || !repeatPasscode) {
             return NextResponse.json(
                 { status: "error", message: "All fields are required" },
@@ -13,9 +28,9 @@ export async function POST(request: Request) {
             );
         }
 
-        if (passcode !== repeatPasscode) {
+        if (phoneNumber.length !== 10) {
             return NextResponse.json(
-                { status: "error", message: "Passcodes do not match" },
+                { status: "error", message: "Phone number must be exactly 10 digits" },
                 { status: 400 }
             );
         }
@@ -23,6 +38,13 @@ export async function POST(request: Request) {
         if (passcode.length < 4) {
             return NextResponse.json(
                 { status: "error", message: "Passcode must be at least 4 characters" },
+                { status: 400 }
+            );
+        }
+
+        if (passcode !== repeatPasscode) {
+            return NextResponse.json(
+                { status: "error", message: "Passcodes do not match" },
                 { status: 400 }
             );
         }
@@ -59,7 +81,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error("Registration error:", error);
         return NextResponse.json(
-            { status: "error", message: error.message || "Registration failed" },
+            { status: "error", message: "Registration failed" },
             { status: 500 }
         );
     }
