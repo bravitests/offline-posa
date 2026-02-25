@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { ShoppingCart, Package, ChartBar, SignOut, User } from "@phosphor-icons/react";
 import SyncBadge from "./SyncBadge";
 
@@ -33,9 +34,9 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">POS</div>
+        <Image src="/logo.png" alt="Baobab" width={40} height={40} className="sidebar-logo-image" />
         <div>
-          <div className="sidebar-logo-text">Offline-First</div>
+          <div className="sidebar-logo-text">Baobab</div>
           <div className="sidebar-logo-sub">Point of Sale</div>
         </div>
       </div>

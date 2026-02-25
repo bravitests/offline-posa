@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   title: "Baobab — Offline Point of Sale",
   description: "Offline-first point of sale system for small businesses.",
   manifest: "/manifest.json",
+  icons: [
+    { rel: "icon", url: "/favicon.ico", sizes: "32x32" },
+    { rel: "icon", url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    { rel: "icon", url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    { rel: "icon", url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+    { rel: "apple-touch-icon", url: "/apple-touch-icon.png", sizes: "180x180" },
+  ],
 };
 
 export const viewport: Viewport = {
