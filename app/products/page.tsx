@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { db, type LocalProduct } from "@/lib/db";
-import { Plus, PencilSimple, Trash } from "@phosphor-icons/react";
+import { Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import { syncEngine } from "@/lib/sync";
+import { v4 as uuidv4 } from "uuid";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState<LocalProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<Partial<LocalProduct>>({});
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newProduct, setNewProduct] = useState({ name: "", price: 0, stock: 0 });
 
     useEffect(() => {
         const load = async () => {
@@ -30,14 +33,12 @@ export default function InventoryPage() {
     const saveEdit = async () => {
         if (!editingId || !editValues.name) return;
         try {
-            // Fetch existing product from state
             const existingProduct = products.find((p) => p.id === editingId);
             if (!existingProduct) {
                 console.error(`Product ${editingId} not found`);
                 return;
             }
 
-            // Construct complete updated product with version bump
             const updated: LocalProduct = {
                 ...existingProduct,
                 name: editValues.name,
@@ -47,7 +48,6 @@ export default function InventoryPage() {
                 updatedAt: Date.now(),
             };
 
-            // Save to database and sync queue in a single atomic transaction
             await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
                 await tx.products.put(updated);
                 await tx.syncQueue.add({
@@ -59,13 +59,64 @@ export default function InventoryPage() {
                 });
             });
 
-            // Only start sync after transaction successfully commits
             syncEngine?.startSync();
             setEditingId(null);
             setEditValues({});
             setProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p));
         } catch (err) {
             console.error("Product update error:", err);
+        }
+    };
+
+    const handleAddProduct = async () => {
+        if (!newProduct.name || newProduct.price <= 0) return;
+        try {
+            const product: LocalProduct = {
+                id: uuidv4(),
+                name: newProduct.name,
+                price: newProduct.price,
+                stock: newProduct.stock,
+                version: 1,
+                updatedAt: Date.now(),
+            };
+
+            await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
+                await tx.products.add(product);
+                await tx.syncQueue.add({
+                    id: `create-${product.id}-${Date.now()}`,
+                    type: "PRODUCT_CREATE",
+                    payload: product,
+                    retries: 0,
+                    lastAttempt: 0,
+                });
+            });
+
+            syncEngine?.startSync();
+            setProducts((prev) => [...prev, product]);
+            setShowAddModal(false);
+            setNewProduct({ name: "", price: 0, stock: 0 });
+        } catch (err) {
+            console.error("Product add error:", err);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this product?")) return;
+        try {
+            await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
+                await tx.products.delete(id);
+                await tx.syncQueue.add({
+                    id: `delete-${id}-${Date.now()}`,
+                    type: "PRODUCT_DELETE",
+                    payload: { id },
+                    retries: 0,
+                    lastAttempt: 0,
+                });
+            });
+            syncEngine?.startSync();
+            setProducts((prev) => prev.filter((p) => p.id !== id));
+        } catch (err) {
+            console.error("Product delete error:", err);
         }
     };
 
@@ -76,7 +127,7 @@ export default function InventoryPage() {
                     <h1 className="page-title">Inventory</h1>
                     <p className="page-subtitle">Manage stock levels and product pricing.</p>
                 </div>
-                <button className="btn-primary">
+                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={16} weight="bold" /> Add Product
                 </button>
             </div>
@@ -153,7 +204,7 @@ export default function InventoryPage() {
                                                     <button className="icon-btn" onClick={() => handleEdit(product)} title="Edit">
                                                         <PencilSimple size={16} />
                                                     </button>
-                                                    <button className="icon-btn danger" title="Delete">
+                                                    <button className="icon-btn danger" title="Delete" onClick={() => handleDelete(product.id)}>
                                                         <Trash size={16} />
                                                     </button>
                                                 </div>
@@ -164,6 +215,57 @@ export default function InventoryPage() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {showAddModal && (
+                <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Add New Product</h2>
+                            <button className="icon-btn" onClick={() => setShowAddModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-field">
+                                <label className="form-label">Product Name</label>
+                                <input
+                                    className="form-input"
+                                    type="text"
+                                    placeholder="Enter product name"
+                                    value={newProduct.name}
+                                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label className="form-label">Price (KES)</label>
+                                <input
+                                    className="form-input mono"
+                                    type="number"
+                                    placeholder="0"
+                                    value={newProduct.price || ""}
+                                    onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label className="form-label">Initial Stock</label>
+                                <input
+                                    className="form-input mono"
+                                    type="number"
+                                    placeholder="0"
+                                    value={newProduct.stock || ""}
+                                    onChange={(e) => setNewProduct({ ...newProduct, stock: Number(e.target.value) })}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="text-link cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
+                            <button className="btn-primary" onClick={handleAddProduct}>
+                                <Plus size={16} weight="bold" /> Add Product
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
