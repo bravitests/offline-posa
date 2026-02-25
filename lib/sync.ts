@@ -88,9 +88,24 @@ class SyncEngine {
                 const result = await response.json();
                 console.warn("Conflict detected for", item.id, result);
                 if (item.type === "PRODUCT_UPDATE") {
+                    // Normalize updatedAt to numeric timestamp
+                    let updatedAt: number;
+                    try {
+                        const rawTimestamp = result.serverData.updatedAt;
+                        updatedAt = rawTimestamp 
+                            ? new Date(rawTimestamp).getTime() 
+                            : Date.now();
+                        // Fallback if conversion resulted in NaN
+                        if (!Number.isFinite(updatedAt)) {
+                            updatedAt = Date.now();
+                        }
+                    } catch {
+                        updatedAt = Date.now();
+                    }
+                    
                     await db.products.put({
                         ...result.serverData,
-                        updatedAt: result.serverData.updatedAt ?? Date.now()
+                        updatedAt
                     });
                     return true;
                 }
