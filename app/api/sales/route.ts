@@ -85,7 +85,7 @@ export async function POST(request: Request) {
                     id,
                     total,
                     mpesaCode,
-                    createdAt: new Date(createdAt),
+                    createdAt: new Date(timestamp),
                     items: {
                         create: items.map((item: any) => ({
                             productId: item.productId,
