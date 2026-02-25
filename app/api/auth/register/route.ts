@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request: Request) {
     try {
@@ -49,17 +50,6 @@ export async function POST(request: Request) {
             );
         }
 
-        const existingUser = await prisma.user.findUnique({
-            where: { phoneNumber },
-        });
-
-        if (existingUser) {
-            return NextResponse.json(
-                { status: "error", message: "Phone number already registered" },
-                { status: 409 }
-            );
-        }
-
         const hashedPasscode = await bcrypt.hash(passcode, 10);
 
         const user = await prisma.user.create({
@@ -80,6 +70,14 @@ export async function POST(request: Request) {
         });
     } catch (error: any) {
         console.error("Registration error:", error);
+        
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            return NextResponse.json(
+                { status: "error", message: "Phone number already registered" },
+                { status: 409 }
+            );
+        }
+        
         return NextResponse.json(
             { status: "error", message: "Registration failed" },
             { status: 500 }
