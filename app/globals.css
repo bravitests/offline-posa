@@ -1229,3 +1229,84 @@ button:disabled {
   flex: 1;
   justify-content: center;
 }
+
+/* ─────────────────────────────────────────
+   AUTH PAGES
+───────────────────────────────────────── */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--bg);
+}
+
+.auth-card {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  animation: slide-up 0.4s var(--ease-out);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.auth-error {
+  background: var(--error-dim);
+  color: var(--error);
+  padding: 0.875rem 1rem;
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  border: 1px solid var(--error);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.auth-footer a {
+  color: var(--primary);
+  font-weight: 600;
+  transition: color 0.18s;
+}
+
+.auth-footer a:hover {
+  color: var(--primary-hover);
+}

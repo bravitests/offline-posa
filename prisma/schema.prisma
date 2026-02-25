@@ -20,6 +20,14 @@ model Product {
   items     SaleItem[]
 }
 
+model User {
+  id          String   @id @default(uuid())
+  fullName    String
+  phoneNumber String   @unique
+  passcode    String
+  createdAt   DateTime @default(now())
+}
+
 model Sale {
   id        String     @id @default(uuid())
   total     Float
