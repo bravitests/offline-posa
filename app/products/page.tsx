@@ -47,16 +47,19 @@ export default function InventoryPage() {
                 updatedAt: Date.now(),
             };
 
-            // Save to database and sync queue
-            await db.products.put(updated);
-            await db.syncQueue.add({
-                id: `update-${updated.id}-${Date.now()}`,
-                type: "PRODUCT_UPDATE",
-                payload: updated,
-                retries: 0,
-                lastAttempt: 0,
+            // Save to database and sync queue in a single atomic transaction
+            await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
+                await tx.products.put(updated);
+                await tx.syncQueue.add({
+                    id: `update-${updated.id}-${Date.now()}`,
+                    type: "PRODUCT_UPDATE",
+                    payload: updated,
+                    retries: 0,
+                    lastAttempt: 0,
+                });
             });
 
+            // Only start sync after transaction successfully commits
             syncEngine?.startSync();
             setEditingId(null);
             setEditValues({});
