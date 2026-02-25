@@ -54,5 +54,5 @@ public/worker-*.js
 .gemini/
 .env
 .env.local
-prisma/prisma/dev.db
+prisma/dev.db
 PR.md
