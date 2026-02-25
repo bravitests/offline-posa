@@ -56,3 +56,4 @@ certs/
 # system
 .gemini/
 PR.md
+docs/

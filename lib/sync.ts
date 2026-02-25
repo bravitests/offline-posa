@@ -10,7 +10,6 @@ class SyncEngine {
     constructor() {
         if (typeof window !== "undefined") {
             window.addEventListener("online", () => this.startSync());
-            // Start immediately
             this.startSync();
         }
     }
@@ -29,13 +28,16 @@ class SyncEngine {
 
             for (const item of items) {
                 if (!navigator.onLine) break;
-                if (item.failed) continue; // Skip items that exceeded max retries
+                if (item.failed) continue;
 
                 const success = await this.syncItem(item);
                 if (success) {
                     await db.syncQueue.delete(item.id);
+                    // Mark sale as synced if it's a sale
+                    if (item.type === "SALE") {
+                        await db.sales.update(item.id, { synced: true });
+                    }
                 } else {
-                    // Increment retries and update lastAttempt
                     const nextRetry = item.retries + 1;
                     if (nextRetry >= MAX_RETRIES) {
                         console.error(`Max retries reached for sync item ${item.id}`);
@@ -51,20 +53,17 @@ class SyncEngine {
                         lastAttempt: Date.now(),
                     });
 
-                    // If a sync fails, we might want to wait according to backoff
                     const waitTime = SYNC_INTERVALS[Math.min(nextRetry, SYNC_INTERVALS.length - 1)];
                     console.log(`Sync failed, waiting ${waitTime}ms before next item...`);
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
                 }
             }
 
-            // Also pull updates from server
             await this.pullUpdates();
         } catch (error) {
             console.error("Sync error:", error);
         } finally {
             this.isProcessing = false;
-            // Schedule next check
             this.scheduleNext();
         }
     }
@@ -80,23 +79,24 @@ class SyncEngine {
                 body: JSON.stringify(item.payload),
             });
 
-            if (response.ok) return true;
+            if (response.ok) {
+                console.log(`✓ Synced ${item.type}:`, item.id);
+                return true;
+            }
 
             if (response.status === 409) {
                 const result = await response.json();
                 console.warn("Conflict detected for", item.id, result);
-                // Handle conflict: usually update local with server data and discard local edit
-                // or let user decide. For POS, "last write wins" with version gating.
                 if (item.type === "PRODUCT_UPDATE") {
                     await db.products.put({
                         ...result.serverData,
                         updatedAt: result.serverData.updatedAt ?? Date.now()
                     });
-                    // Discard the failed update as it's stale
                     return true;
                 }
             }
 
+            console.error(`Sync failed for ${item.type}:`, item.id, response.status);
             return false;
         } catch (error) {
             console.error("Sync item error:", error, "Item:", item.id);
@@ -106,7 +106,6 @@ class SyncEngine {
 
     private async pullUpdates() {
         try {
-            // Pull products
             const lastProductUpdate = await db.products.orderBy("updatedAt").last();
             const productTimestamp = lastProductUpdate?.updatedAt || 0;
 
@@ -118,12 +117,9 @@ class SyncEngine {
                         ...p,
                         updatedAt: new Date(p.updatedAt).getTime()
                     })));
+                    console.log(`✓ Pulled ${newProducts.length} product updates`);
                 }
             }
-
-            // Pull sales (mainly to mark local sales as synced)
-            const pendingSales = await db.sales.where("synced").equals(0).toArray();
-            // Actually, sales are pushed, not pulled normally, but we can verify sync status
         } catch (error) {
             console.error("Pull error:", error);
         }
@@ -131,7 +127,7 @@ class SyncEngine {
 
     private scheduleNext() {
         if (this.syncTimeout) clearTimeout(this.syncTimeout);
-        this.syncTimeout = setTimeout(() => this.startSync(), 60000); // Check every minute if idle
+        this.syncTimeout = setTimeout(() => this.startSync(), 30000);
     }
 }
 
