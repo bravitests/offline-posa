@@ -168,24 +168,22 @@ export async function GET(request: Request) {
         }
     }
 
-    const sales = await prisma.sale.findMany(
-        updatedAfter
-            ? {
-                where: {
-                    createdAt: {
-                        gt: new Date(Number(updatedAfter)),
-                    },
+    const sales = updatedAfter
+        ? await prisma.sale.findMany({
+            where: {
+                createdAt: {
+                    gt: new Date(Number(updatedAfter)),
                 },
-                include: {
-                    items: true,
-                },
-            }
-            : {
-                include: {
-                    items: true,
-                },
-            }
-    );
+            },
+            include: {
+                items: true,
+            },
+        })
+        : await prisma.sale.findMany({
+            include: {
+                items: true,
+            },
+        });
 
     return NextResponse.json(sales);
 }
