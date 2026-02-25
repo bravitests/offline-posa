@@ -18,9 +18,9 @@ export async function PUT(
             );
         }
 
-        if (typeof price !== "number" || price < 0) {
+        if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
             return NextResponse.json(
-                { status: "error", message: "price must be a number >= 0" },
+                { status: "error", message: "price must be a finite number >= 0" },
                 { status: 400 }
             );
         }
@@ -32,9 +32,9 @@ export async function PUT(
             );
         }
 
-        if (incomingVersion !== undefined && typeof incomingVersion !== "number") {
+        if (typeof incomingVersion !== "number") {
             return NextResponse.json(
-                { status: "error", message: "version must be a number if provided" },
+                { status: "error", message: "version is required and must be a number" },
                 { status: 400 }
             );
         }

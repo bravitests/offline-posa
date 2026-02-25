@@ -52,7 +52,4 @@ public/worker-*.js
 
 # system
 .gemini/
-.env
-.env.local
-prisma/dev.db
 PR.md

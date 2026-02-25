@@ -16,18 +16,25 @@ const STATUS_CONFIG: Record<SyncStatus, { icon: any; color: string; text: (n: nu
 export default function SyncBadge() {
     const [status, setStatus] = useState<SyncStatus>("synced");
     const [pendingCount, setPendingCount] = useState(0);
+    let updateToken = 0;
 
     useEffect(() => {
         const update = async () => {
+            const currentToken = ++updateToken;
             try {
-                if (!navigator.onLine) { setStatus("offline"); return; }
-                setStatus("syncing");
+                if (!navigator.onLine) { 
+                    if (currentToken === updateToken) setStatus("offline"); 
+                    return; 
+                }
+                if (currentToken === updateToken) setStatus("syncing");
                 const count = await db.syncQueue.count();
-                setPendingCount(count);
-                setStatus(count > 0 ? "pending" : "synced");
+                if (currentToken === updateToken) {
+                    setPendingCount(count);
+                    setStatus(count > 0 ? "pending" : "synced");
+                }
             } catch (error) {
                 console.error("SyncBadge update error:", error);
-                setStatus("offline");
+                if (currentToken === updateToken) setStatus("offline");
             }
         };
 

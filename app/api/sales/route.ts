@@ -14,7 +14,41 @@ export async function POST(request: Request) {
             );
         }
 
+        if (typeof total !== "number" || !Number.isFinite(total) || total < 0) {
+            return NextResponse.json(
+                { status: "error", message: "total must be a finite non-negative number" },
+                { status: 400 }
+            );
+        }
+
+        if (!id || typeof id !== "string") {
+            return NextResponse.json(
+                { status: "error", message: "id must be a non-empty string" },
+                { status: 400 }
+            );
+        }
+
+        const timestamp = Number(createdAt);
+        if (!Number.isFinite(timestamp) || timestamp <= 0) {
+            return NextResponse.json(
+                { status: "error", message: "createdAt must be a valid timestamp" },
+                { status: 400 }
+            );
+        }
+
         for (const item of items) {
+            if (!item.productId || typeof item.productId !== "string") {
+                return NextResponse.json(
+                    { status: "error", message: "each item must have a valid productId" },
+                    { status: 400 }
+                );
+            }
+            if (typeof item.price !== "number" || !Number.isFinite(item.price) || item.price <= 0) {
+                return NextResponse.json(
+                    { status: "error", message: "each item price must be a finite positive number" },
+                    { status: 400 }
+                );
+            }
             if (typeof item.qty !== "number" || item.qty <= 0 || !Number.isInteger(item.qty)) {
                 return NextResponse.json(
                     { status: "error", message: "each item qty must be a positive integer" },
@@ -98,7 +132,25 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: "success", sale });
     } catch (error: any) {
         console.error("Sale sync error:", error);
-        return NextResponse.json({ status: "error", message: error.message }, { status: 500 });
+        
+        const errorMsg = error.message || "";
+        if (errorMsg.includes("Insufficient stock") || errorMsg.includes("Stock check failed")) {
+            return NextResponse.json(
+                { status: "error", message: "Insufficient stock for one or more items" },
+                { status: 409 }
+            );
+        }
+        if (errorMsg.includes("not found")) {
+            return NextResponse.json(
+                { status: "error", message: "One or more products not found" },
+                { status: 422 }
+            );
+        }
+        
+        return NextResponse.json(
+            { status: "error", message: "Failed to process sale" },
+            { status: 500 }
+        );
     }
 }
 
@@ -106,18 +158,34 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const updatedAfter = searchParams.get("updatedAfter");
 
-    const sales = await prisma.sale.findMany({
-        where: updatedAfter
+    if (updatedAfter) {
+        const timestamp = Number(updatedAfter);
+        if (!Number.isFinite(timestamp) || timestamp < 0) {
+            return NextResponse.json(
+                { status: "error", message: "updatedAfter must be a valid timestamp" },
+                { status: 400 }
+            );
+        }
+    }
+
+    const sales = await prisma.sale.findMany(
+        updatedAfter
             ? {
-                createdAt: {
-                    gt: new Date(Number(updatedAfter)),
+                where: {
+                    createdAt: {
+                        gt: new Date(Number(updatedAfter)),
+                    },
+                },
+                include: {
+                    items: true,
                 },
             }
-            : {},
-        include: {
-            items: true,
-        },
-    });
+            : {
+                include: {
+                    items: true,
+                },
+            }
+    );
 
     return NextResponse.json(sales);
 }

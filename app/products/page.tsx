@@ -51,7 +51,7 @@ export default function InventoryPage() {
             await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
                 await tx.products.put(updated);
                 await tx.syncQueue.add({
-                    id: `update-${updated.id}-${Date.now()}`,
+                    id: `update-${updated.id}-${crypto.randomUUID()}`,
                     type: "PRODUCT_UPDATE",
                     payload: updated,
                     retries: 0,

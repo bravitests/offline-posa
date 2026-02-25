@@ -65,9 +65,13 @@ export default function POSPage() {
         // Add sale
         await tx.sales.add(saleData as any);
 
-        // Update product stock
+        // Update product stock atomically
         for (const i of cart) {
-          await tx.products.update(i.product.id, { stock: i.product.stock - i.qty });
+          const currentProduct = await tx.products.get(i.product.id);
+          if (currentProduct) {
+            const newStock = Math.max(0, currentProduct.stock - i.qty);
+            await tx.products.update(i.product.id, { stock: newStock });
+          }
         }
 
         // Add to sync queue
