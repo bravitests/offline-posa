@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Package, ChartBar } from "@phosphor-icons/react";
+import { ShoppingCart, Package, ChartBar, Sun, Moon } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
 
 const navItems = [
     { href: "/", label: "Sales", icon: ShoppingCart },
@@ -12,6 +13,26 @@ const navItems = [
 
 export default function BottomNav() {
     const pathname = usePathname();
+    const [isDark, setIsDark] = useState(true);
+
+    useEffect(() => {
+        const saved = localStorage.getItem("theme");
+        if (saved) {
+            setIsDark(saved === "dark");
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const newIsDark = !isDark;
+        setIsDark(newIsDark);
+        if (newIsDark) {
+            document.documentElement.classList.remove("light");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.add("light");
+            localStorage.setItem("theme", "light");
+        }
+    };
 
     return (
         <nav className="bottom-nav">
@@ -28,6 +49,14 @@ export default function BottomNav() {
                     </Link>
                 );
             })}
+            <button
+                onClick={toggleTheme}
+                className="bottom-nav-item"
+                aria-label="Toggle theme"
+            >
+                {isDark ? <Sun size={22} /> : <Moon size={22} />}
+                <span>{isDark ? "Light" : "Dark"}</span>
+            </button>
         </nav>
     );
 }

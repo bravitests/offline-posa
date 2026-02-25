@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingCart, Package, ChartBar } from "@phosphor-icons/react";
 import SyncBadge from "./SyncBadge";
+import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
   { href: "/", label: "Sales", icon: ShoppingCart },
@@ -41,6 +42,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        <ThemeToggle />
         <SyncBadge />
       </div>
     </aside>
