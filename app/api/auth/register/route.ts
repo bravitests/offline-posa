@@ -56,10 +56,10 @@ export async function POST(request: Request) {
                 phoneNumber: user.phoneNumber,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Registration error:", error);
         return NextResponse.json(
-            { status: "error", message: "Registration failed" },
+            { status: "error", message: error.message || "Registration failed" },
             { status: 500 }
         );
     }
