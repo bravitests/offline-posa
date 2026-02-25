@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+/**
+ * Update a product by id using optimistic concurrency control based on the product's `version`.
+ *
+ * Expects a JSON request body with `name` (non-empty string), `price` (finite number >= 0), `stock` (non-negative integer),
+ * and `version` (number) to perform a conditional update that increments `version` on success.
+ *
+ * @param params - Route parameters promise resolving to an object with `id` (the product id to update)
+ * @returns A JSON response object:
+ * - Success (200): `{ status: "success", product }` with the updated product.
+ * - Conflict (409): `{ status: "conflict", message, currentVersion, serverData }` when the provided `version` does not match the server version.
+ * - Validation error (400): `{ status: "error", message }` for invalid or missing input fields.
+ * - Not found (404): `{ status: "error", message }` when the product does not exist.
+ * - Server error (500): `{ status: "error", message }` for unexpected failures.
+ */
 export async function PUT(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

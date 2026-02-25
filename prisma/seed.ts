@@ -13,6 +13,11 @@ const products = [
     { name: "Tea Leaves 100g", price: 90, stock: 55 },
 ];
 
+/**
+ * Seeds the database with the predefined products list by upserting each product.
+ *
+ * For each product, updates the record's price and stock if it exists; otherwise creates a new product record with version set to 1. Logs start and completion messages to the console.
+ */
 async function main() {
     console.log("Seeding products...");
     for (const product of products) {

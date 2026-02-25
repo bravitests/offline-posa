@@ -12,6 +12,19 @@ interface AddProductModalProps {
   onProductAdded: (product: LocalProduct) => void;
 }
 
+/**
+ * Renders a modal form for creating a new product and persists the new product to the local database.
+ *
+ * The form requires a non-empty product name and numeric price and stock inputs. On successful submission
+ * a LocalProduct is created, added to the local products store, a PRODUCT_UPDATE task is enqueued in the
+ * sync queue, the global sync engine is triggered (if available), and the provided `onProductAdded` callback
+ * is invoked with the created product. The modal closes after a successful add.
+ *
+ * @param isOpen - Whether the modal is visible
+ * @param onClose - Callback invoked to close the modal
+ * @param onProductAdded - Callback invoked with the newly created LocalProduct after it is persisted
+ * @returns The modal JSX element, or `null` when the modal is closed
+ */
 export default function AddProductModal({ isOpen, onClose, onProductAdded }: AddProductModalProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");

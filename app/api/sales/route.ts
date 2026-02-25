@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+/**
+ * Handle creating a sale: validate payload, enforce idempotency by `id`, create the sale if new, and decrement product stock.
+ *
+ * Performs thorough validation of `items`, `total`, `id`, and `createdAt`. If a sale with the provided `id` already exists, the existing sale is returned without modifying stock. When creating a new sale, each item's product is checked for existence and sufficient stock; stock is then decremented with a conditional update to detect concurrent modifications.
+ *
+ * @param request - The incoming HTTP request containing a JSON body with `id`, `items`, `total`, `mpesaCode`, and `createdAt`.
+ * @returns A JSON response object:
+ * - On success: `{ status: "success", sale }` (the created or existing sale).
+ * - Validation errors: 400 with `{ status: "error", message }`.
+ * - Insufficient stock: 409 with `{ status: "error", message }`.
+ * - Missing products: 422 with `{ status: "error", message }`.
+ * - Other failures: 500 with `{ status: "error", message }`.
+ */
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -164,6 +177,14 @@ export async function POST(request: Request) {
     }
 }
 
+/**
+ * Retrieve sales, optionally filtered to those created after a provided timestamp.
+ *
+ * Validates the optional `updatedAfter` query parameter as a non-negative timestamp. If valid or not provided, returns sales including their items; if invalid, returns a 400 error response.
+ *
+ * @param request - HTTP request; may include `updatedAfter` query parameter (milliseconds since epoch)
+ * @returns On success, a JSON array of sales with their `items`. On invalid `updatedAfter`, a JSON error object with `status: "error"` and an explanatory `message` and HTTP status 400.
+ */
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const updatedAfter = searchParams.get("updatedAfter");

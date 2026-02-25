@@ -21,6 +21,12 @@ export const viewport: Viewport = {
   themeColor: "#10b981",
 };
 
+/**
+ * Renders the application's root HTML layout, registers the PWA, enforces authentication, and places page content inside the app shell.
+ *
+ * @param children - Page content to render inside the AppShell
+ * @returns The root HTML structure for the application
+ */
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

@@ -6,6 +6,13 @@ import { Plus, PencilSimple, Trash } from "@phosphor-icons/react";
 import { syncEngine } from "@/lib/sync";
 import AddProductModal from "@/components/AddProductModal";
 
+/**
+ * Renders the Inventory page UI and manages local product state, editing, persistence, and sync scheduling.
+ *
+ * Loads products from the local database on mount and refreshes the list every 5 seconds. Provides inline editing for product name, price, and stock; saving an edit updates the product's version and updatedAt timestamp, performs an atomic transaction that writes the product and a corresponding syncQueue entry, and then starts the sync engine only after the transaction commits. Exposes an "Add Product" modal that, when a product is added, appends it to the in-page product list.
+ *
+ * @returns The Inventory page React element.
+ */
 export default function InventoryPage() {
     const [products, setProducts] = useState<LocalProduct[]>([]);
     const [loading, setLoading] = useState(true);

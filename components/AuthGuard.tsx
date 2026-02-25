@@ -16,6 +16,9 @@ import { useRouter, usePathname } from "next/navigation";
  * - localStorage allows offline access to cached data (required for offline-first)
  * 
  * This is a known limitation documented in PR.md and SECURITY.md.
+ * 
+ * @param children - The component tree to render when the user is authenticated
+ * @returns The `children` when authenticated, a full-screen loading skeleton while checking authentication, or `null` if unauthenticated after redirects
  */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
