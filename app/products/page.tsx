@@ -128,7 +128,6 @@ export default function InventoryPage() {
                     <p className="page-subtitle">Manage stock levels and product pricing.</p>
                 </div>
                 <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={16} weight="bold" /> Add Product
                 </button>
             </div>
