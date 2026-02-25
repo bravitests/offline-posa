@@ -1,4 +1,4 @@
-# Offline-Pos
+# Offline-POS
 
 Offline-First Point of Sale System for Small Businesses
 
@@ -39,13 +39,19 @@ Local-First POS is a Progressive Web Application (PWA) built to operate fully of
 ### High-Level Design
 
 ```
-Client (PWA)
-  ├── IndexedDB (Primary Data Store)
-  ├── Sync Queue (Pending Network Actions)
-  ├── Service Worker (Offline & Caching Layer)
+Next.js App (Single Codebase)
+  ├── Client Layer
+  │     ├── IndexedDB (Primary Data Store)
+  │     │     ├── Products
+  │     │     ├── Sales (Append-Only Event Log)
+  │     │     └── Sync Queue
+  │     ├── Sync Status Indicator (Live Badge UI)
+  │     └── Service Worker (Offline & Caching Layer)
   │
-  └── Backend API
-      └── Event-Based Sales Processing
+  └── Server Layer (Next.js API Routes)
+        ├── POST /api/sales        ← append-only event handler
+        └── GET|PUT /api/products  ← version-gated update handler
+              └── SQLite via Prisma (server-side DB)
 ```
 
 ### Architectural Philosophy
@@ -57,23 +63,24 @@ The network is treated as a synchronization layer, not a dependency.
 1. Save locally first
 2. Update UI instantly (optimistic)
 3. Queue for background sync
+4. Update sync status badge (e.g. "3 sales pending sync")
 
 ---
 
 ## Tech Stack
 
-### Frontend
+Next.js serves as the single unified framework — no separate backend. The frontend (React, Service Worker, IndexedDB) and the server (API Routes) all live in the same Next.js project.
 
-- React (or Vanilla + Vite)
-- IndexedDB (via Dexie.js recommended)
-- Service Worker (Workbox optional)
-- PWA Manifest
-
-### Backend
-
-- Node.js (Express) or Go
-- REST API
-- Event-based sales storage
+| Layer | Technology |
+|---|---|
+| Framework | Next.js (App Router) |
+| UI | React Server + Client Components |
+| Local Storage | IndexedDB via Dexie.js (client-only) |
+| Service Worker | next-pwa (Workbox-based) |
+| PWA Manifest | `/public/manifest.json` |
+| API Layer | Next.js API Routes (`/app/api/...`) |
+| Server Runtime | Node.js (via Next.js) |
+| Database | SQLite via Prisma (runs inside Next.js) |
 
 ---
 
@@ -92,7 +99,7 @@ The network is treated as a synchronization layer, not a dependency.
 }
 ```
 
-### Sales
+### Sales (Immutable Event Log)
 
 ```json
 {
@@ -110,6 +117,8 @@ The network is treated as a synchronization layer, not a dependency.
   "synced": "boolean"
 }
 ```
+
+> **Design Note:** Sales are treated as an append-only event log. Once written, a sale is never mutated — only appended. This means there is no conflict surface on sales at all. Stock levels are derived server-side from the total event log, not stored as a raw number that can conflict.
 
 ### Sync Queue
 
@@ -130,7 +139,7 @@ The network is treated as a synchronization layer, not a dependency.
 ### Write Flow
 
 ```
-User Action → Save to IndexedDB → Update UI instantly → Add to syncQueue
+User Action → Save to IndexedDB → Update UI instantly → Increment sync badge → Add to syncQueue
 ```
 
 ### Background Sync Worker
@@ -138,27 +147,60 @@ User Action → Save to IndexedDB → Update UI instantly → Add to syncQueue
 **If online:**
 
 - Process syncQueue items
-- Send to backend
+- Send to Next.js API route
 - Remove on success
+- Decrement sync badge count
 - Retry with exponential backoff on failure
 
 **Backoff intervals:** `2s → 5s → 10s → 30s → 60s`
+
+### Partial Sync
+
+Sync requests use a timestamp filter so only new or changed records are fetched — never a full database refresh:
+
+```
+GET /api/sales?updatedAfter=<timestamp>
+GET /api/products?updatedAfter=<timestamp>
+```
+
+This minimizes payload size, reduces data cost, and is battery-aware.
 
 ---
 
 ## Conflict Resolution Strategy
 
-Sales are treated as immutable events.
+### Sales — No Conflict Possible
 
-**Instead of directly syncing stock numbers:**
+Sales are an **append-only immutable event log**. Each sale is a unique event that is never edited after creation. There is nothing to conflict. Both devices simply append their events, and the server merges the log chronologically.
 
-- Sales are appended server-side
-- Stock is derived from total sales
+### Product Updates — Version-Controlled
 
-**If version conflicts occur:**
+Product edits (price changes, manual stock corrections) are the only real conflict surface.
 
-- Latest version (timestamp-based) wins
-- Conflicts are logged for transparency
+**Resolution approach:**
+
+1. Every product carries a `version` integer
+2. On sync, the client sends its version alongside the update
+3. The server rejects updates where the incoming version is behind the current server version
+4. The client receives the latest version and re-applies or discards its local change
+5. All conflicts are logged server-side for transparency
+
+**In plain terms:** last coherent write wins, with version gating to prevent stale overwrites.
+
+---
+
+## Sync Status Indicator (UI)
+
+A persistent badge in the app header shows sync state at all times:
+
+| State | Badge |
+|---|---|
+| All synced | ✅ Synced |
+| Pending items | 🟡 3 sales pending sync |
+| Actively syncing | 🔄 Syncing... |
+| Sync failed | 🔴 Sync failed — will retry |
+
+This gives shopkeepers confidence that their data is safe even without internet, and makes the sync moment visible and satisfying during demos.
 
 ---
 
@@ -178,13 +220,13 @@ Sales are treated as immutable events.
 
 - Add / Edit products
 - Track stock
-- Automatic versioning
+- Automatic versioning for conflict resolution
 
 ### Sales Recording
 
 - Record sales offline
 - M-Pesa reference logging
-- Instant stock deduction
+- Instant stock deduction (optimistic, local)
 
 ### Reporting
 
@@ -196,31 +238,29 @@ Sales are treated as immutable events.
 
 - Automatic background synchronization
 - Retry with exponential backoff
+- Sync status badge (pending count visible at all times)
 - Graceful UI fallback during server errors
 
 ---
 
 ## Failure Scenarios Handled
 
-- Network drop during sync
-- Backend returns 500 error
-- App closed during write
-- Conflicting updates across devices
-- Slow (2G) network conditions
-- Temporary offline state
-
-**System Response:**
-
-- Never blocks UI
-- Queues writes safely
-- Retries automatically
-- Preserves data integrity
+| Scenario | System Response |
+|---|---|
+| Network drop during sync | Item stays in queue, retries on reconnect |
+| API route returns 500 | Exponential backoff, logged in queue |
+| App closed during write | IndexedDB transaction ensures write safety |
+| Conflicting product edits across devices | Version check on server, stale write rejected |
+| Slow (2G) network | Partial sync, compressed payload, no full refresh |
+| Device storage nearly full | Warn user, prioritize sync queue flush |
 
 ---
 
 ## API Contract
 
-### POST /sales
+All API routes live inside Next.js under `/app/api/`.
+
+### POST /api/sales
 
 **Request:**
 
@@ -241,9 +281,36 @@ Sales are treated as immutable events.
 }
 ```
 
-### GET /sales?updatedAfter=timestamp
+### GET /api/sales?updatedAfter=timestamp
 
-Returns only updated sales for partial sync.
+Returns only sales created after the given timestamp. Enables partial sync — no full database pull required.
+
+### GET /api/products?updatedAfter=timestamp
+
+Returns only products updated after the given timestamp.
+
+### PUT /api/products/:id
+
+**Request:**
+
+```json
+{
+  "name": "string",
+  "price": "number",
+  "stock": "number",
+  "version": "number"
+}
+```
+
+**Response (conflict):**
+
+```json
+{
+  "status": "conflict",
+  "currentVersion": "number",
+  "serverData": {}
+}
+```
 
 ---
 
@@ -258,11 +325,12 @@ Returns only updated sales for partial sync.
 
 ## Performance Optimizations
 
-- Partial sync (timestamp-based)
+- Partial sync (timestamp-based, both sales and products)
 - Minimal payload size
-- No full database refresh
+- No full database refresh ever
 - Optimistic UI updates
 - Background sync queues
+- Append-only event model eliminates merge complexity
 
 ---
 
@@ -272,25 +340,54 @@ Returns only updated sales for partial sync.
 - Reduced polling
 - Compressed payloads
 - Efficient caching strategy
+- Partial sync keeps transfer sizes minimal
+
+---
+
+## Demo Script (Recommended Flow)
+
+1. **Start online** — show products loaded, badge shows ✅ Synced
+2. **Turn off WiFi** — badge shifts to offline indicator
+3. **Record 3–5 sales** — stock deducts instantly, badge shows "4 sales pending sync"
+4. **Attempt to reload page** — app boots from cache, all data intact
+5. **Reconnect WiFi** — badge animates to 🔄 Syncing, then ✅ Synced
+6. **Check the API route directly** — hit `/api/sales` in the browser or Postman, show all 4 sales arrived server-side, stock derived correctly from event log
+7. **Conflict demo** — edit a product price on two tabs simultaneously, show version rejection on the stale write
 
 ---
 
 ## Project Structure
 
 ```
-/frontend
-├── components
-├── pages
-├── db.js
-├── sync.js
-├── service-worker.js
-└── manifest.json
+/app
+├── layout.tsx                        ← root layout, mounts SyncBadge
+├── page.tsx                          ← POS home / sales screen
+├── products/
+│   └── page.tsx                      ← product management
+├── reports/
+│   └── page.tsx                      ← offline-generated analytics
+└── api/
+    ├── sales/
+    │   └── route.ts                  ← POST /api/sales (append-only)
+    └── products/
+        └── route.ts                  ← GET + PUT /api/products (version-gated)
 
-/backend
-├── routes
-├── controllers
-└── server.js
+/components
+└── SyncBadge.tsx                     ← live pending sync indicator
+
+/lib
+├── db.ts                             ← Dexie schema + helpers (client-only)
+├── sync.ts                           ← queue processor + backoff logic (client-only)
+└── constants.ts                      ← backoff intervals, retry limits
+
+/public
+├── manifest.json                     ← PWA manifest
+└── service-worker.js                 ← custom SW or generated by next-pwa
+
+next.config.js                        ← next-pwa config
 ```
+
+> **Note:** Dexie.js and all IndexedDB access must be client-side only. Use `"use client"` directive on any component or hook that touches `db.ts` or `sync.ts`. API routes in `/app/api/` run server-side and connect to your database.
 
 ---
 
