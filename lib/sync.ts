@@ -33,6 +33,10 @@ class SyncEngine {
                 const success = await this.syncItem(item);
                 if (success) {
                     await db.syncQueue.delete(item.id);
+                    // Mark sale as synced
+                    if (item.type === "SALE") {
+                        await db.sales.update(item.payload.id, { synced: true });
+                    }
                 } else {
                     // Increment retries and update lastAttempt
                     const nextRetry = item.retries + 1;
