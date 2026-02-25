@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CloudCheck, CloudArrowUp, CloudSlash, ArrowsClockwise } from "@phosphor-icons/react";
 import { db } from "@/lib/db";
+import { syncEngine } from "@/lib/sync";
 
 type SyncStatus = "synced" | "pending" | "syncing" | "offline";
 
@@ -17,36 +18,43 @@ export default function SyncBadge() {
     const [status, setStatus] = useState<SyncStatus>("synced");
     const [pendingCount, setPendingCount] = useState(0);
 
-    useEffect(() => {
-        const update = async () => {
-            try {
-                if (!navigator.onLine) { setStatus("offline"); return; }
-                setStatus("syncing");
-                const count = await db.syncQueue.count();
-                setPendingCount(count);
-                setStatus(count > 0 ? "pending" : "synced");
-            } catch (error) {
-                console.error("SyncBadge update error:", error);
-                setStatus("offline");
-            }
-        };
+    const updateStatus = async () => {
+        try {
+            if (!navigator.onLine) { setStatus("offline"); return; }
+            const count = await db.syncQueue.count();
+            setPendingCount(count);
+            setStatus(count > 0 ? "pending" : "synced");
+        } catch (error) {
+            console.error("SyncBadge update error:", error);
+            setStatus("offline");
+        }
+    };
 
-        const iv = setInterval(update, 3000);
-        update();
-        window.addEventListener("online", update);
-        window.addEventListener("offline", update);
+    useEffect(() => {
+        const iv = setInterval(updateStatus, 3000);
+        updateStatus();
+        window.addEventListener("online", updateStatus);
+        window.addEventListener("offline", updateStatus);
         return () => {
             clearInterval(iv);
-            window.removeEventListener("online", update);
-            window.removeEventListener("offline", update);
+            window.removeEventListener("online", updateStatus);
+            window.removeEventListener("offline", updateStatus);
         };
     }, []);
+
+    const handleSync = () => {
+        if (navigator.onLine && syncEngine) {
+            setStatus("syncing");
+            syncEngine.startSync();
+            setTimeout(updateStatus, 2000);
+        }
+    };
 
     const cfg = STATUS_CONFIG[status];
     const Icon = cfg.icon;
 
     return (
-        <div className="sync-badge">
+        <button className="sync-badge" onClick={handleSync} disabled={status === "offline"}>
             <Icon
                 size={16}
                 style={{ color: cfg.color, flexShrink: 0 }}
@@ -54,6 +62,6 @@ export default function SyncBadge() {
                 weight="bold"
             />
             <span style={{ color: cfg.color }}>{cfg.text(pendingCount)}</span>
-        </div>
+        </button>
     );
 }
