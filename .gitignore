@@ -50,6 +50,9 @@ public/worker-*.js
 *.db
 *.db-journal
 
+# SSL certificates
+certs/
+
 # system
 .gemini/
 PR.md

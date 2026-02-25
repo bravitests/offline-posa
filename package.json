@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "node scripts/https-server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup:certs": "bash scripts/generate-certs.sh"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
