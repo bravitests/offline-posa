@@ -1,6 +1,6 @@
 {
-  "name": "Offline-POS",
-  "short_name": "POS",
+  "name": "Baobab POS",
+  "short_name": "Baobab",
   "description": "Offline-First Point of Sale System",
   "start_url": "/",
   "display": "standalone",

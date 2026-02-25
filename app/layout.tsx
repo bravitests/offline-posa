@@ -5,7 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
-  title: "Offline-POS — Resilient Point of Sale",
+  title: "Baobab — Offline Point of Sale",
   description: "Offline-first point of sale system for small businesses.",
   manifest: "/manifest.json",
 };
