@@ -1093,7 +1093,7 @@ button:disabled {
   animation: spin 1.5s linear infinite;
 }
 
-@keyframes fadeUp {
+@keyframes fade-up {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -1106,12 +1106,12 @@ button:disabled {
 }
 
 .fade-up {
-  animation: fadeUp 0.35s var(--ease-out) both;
+  animation: fade-up 0.35s var(--ease-out) both;
 }
 
 /* Stagger fade-in for product cards */
 .products-grid .product-card {
-  animation: fadeUp 0.3s var(--ease-out) both;
+  animation: fade-up 0.3s var(--ease-out) both;
 }
 
 /* Visible scrollbar */

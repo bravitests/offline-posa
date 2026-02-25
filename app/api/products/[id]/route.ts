@@ -85,6 +85,6 @@ export async function PUT(
         return NextResponse.json({ status: "success", product: updatedProduct });
     } catch (error: any) {
         console.error("Product update error:", error);
-        return NextResponse.json({ status: "error", message: error.message }, { status: 500 });
+        return NextResponse.json({ status: "error", message: "Internal server error" }, { status: 500 });
     }
 }
