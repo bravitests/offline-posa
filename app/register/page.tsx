@@ -23,7 +23,12 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, phoneNumber, passcode, repeatPasscode }),
+        body: JSON.stringify({ 
+          fullName: fullName.trim(), 
+          phoneNumber: phoneNumber.trim(), 
+          passcode: passcode.trim(), 
+          repeatPasscode: repeatPasscode.trim() 
+        }),
       });
 
       const data = await res.json();
@@ -64,6 +69,7 @@ export default function RegisterPage() {
               onChange={(e) => setFullName(e.target.value)}
               required
               autoFocus
+              maxLength={100}
             />
           </div>
 
@@ -72,10 +78,13 @@ export default function RegisterPage() {
             <input
               className="form-input"
               type="tel"
+              inputMode="tel"
+              pattern="[0-9]*"
               placeholder="e.g. 0712345678"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, ''))}
               required
+              maxLength={10}
             />
           </div>
 

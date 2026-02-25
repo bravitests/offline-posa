@@ -21,7 +21,10 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber, passcode }),
+        body: JSON.stringify({ 
+          phoneNumber: phoneNumber.trim(), 
+          passcode: passcode.trim() 
+        }),
       });
 
       const data = await res.json();
@@ -58,11 +61,14 @@ export default function LoginPage() {
             <input
               className="form-input"
               type="tel"
+              inputMode="tel"
+              pattern="[0-9]*"
               placeholder="e.g. 0712345678"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, ''))}
               required
               autoFocus
+              maxLength={10}
             />
           </div>
 
