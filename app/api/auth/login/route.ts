@@ -17,9 +17,6 @@ export async function POST(request: Request) {
             where: { phoneNumber },
         });
 
-        console.log("Login attempt for:", phoneNumber);
-        console.log("User found:", user ? "Yes" : "No");
-
         if (!user) {
             return NextResponse.json(
                 { status: "error", message: "Invalid phone number or passcode" },
@@ -28,7 +25,6 @@ export async function POST(request: Request) {
         }
 
         const isValid = await bcrypt.compare(passcode, user.passcode);
-        console.log("Password valid:", isValid);
 
         if (!isValid) {
             return NextResponse.json(
