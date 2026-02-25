@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Package, ChartBar } from "@phosphor-icons/react";
+import { ShoppingCart, Package, ChartBar, SignOut, User } from "@phosphor-icons/react";
 import SyncBadge from "./SyncBadge";
 
 const navItems = [
@@ -13,6 +15,20 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<{ fullName: string } | null>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
 
   return (
     <aside className="sidebar">
@@ -42,6 +58,20 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <SyncBadge />
+        {user && (
+          <>
+            <div className="sidebar-user">
+              <div className="sidebar-user-icon">
+                <User size={18} weight="bold" />
+              </div>
+              <div className="sidebar-user-name">{user.fullName}</div>
+            </div>
+            <button className="sidebar-logout" onClick={handleLogout}>
+              <SignOut size={18} />
+              Logout
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );

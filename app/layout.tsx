@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import BottomNav from "@/components/BottomNav";
 import PWARegister from "@/components/PWARegister";
+import AuthGuard from "@/components/AuthGuard";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Baobab — Offline Point of Sale",
@@ -21,13 +21,9 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning>
         <PWARegister />
-        <div className="app-shell">
-          <Sidebar />
-          <BottomNav />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
+        <AuthGuard>
+          <AppShell>{children}</AppShell>
+        </AuthGuard>
       </body>
     </html>
   );

@@ -1310,3 +1310,55 @@ button:disabled {
 .auth-footer a:hover {
   color: var(--primary-hover);
 }
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  margin-top: 0.75rem;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+}
+
+.sidebar-user-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  margin-top: 0.5rem;
+  background: var(--error-dim);
+  color: var(--error);
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.18s;
+}
+
+.sidebar-logout:hover {
+  background: var(--error);
+  color: #fff;
+}
