@@ -104,7 +104,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading} style={{ width: "100%" }}>
+          <button type="submit" className="btn-primary" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
