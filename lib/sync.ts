@@ -17,10 +17,11 @@ class SyncEngine {
 
     public async startSync() {
         if (this.isProcessing || !navigator.onLine) return;
-        this.processQueue();
+        await this.processQueue();
     }
 
     private async processQueue() {
+        if (this.isProcessing) return;
         this.isProcessing = true;
 
         try {
@@ -93,7 +94,7 @@ class SyncEngine {
                 if (item.type === "PRODUCT_UPDATE") {
                     await db.products.put({
                         ...result.serverData,
-                        updatedAt: result.serverData.updatedAt || Date.now()
+                        updatedAt: result.serverData.updatedAt ?? Date.now()
                     });
                     // Discard the failed update as it's stale
                     return true;
@@ -102,6 +103,7 @@ class SyncEngine {
 
             return false;
         } catch (error) {
+            console.error("Sync item error:", error, "Item:", item.id);
             return false;
         }
     }
@@ -133,7 +135,7 @@ class SyncEngine {
 
     private scheduleNext() {
         if (this.syncTimeout) clearTimeout(this.syncTimeout);
-        this.syncTimeout = setTimeout(() => this.processQueue(), 60000); // Check every minute if idle
+        this.syncTimeout = setTimeout(() => this.startSync(), 60000); // Check every minute if idle
     }
 }
 

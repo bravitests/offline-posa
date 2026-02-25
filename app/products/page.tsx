@@ -51,7 +51,7 @@ export default function InventoryPage() {
             await db.transaction('rw', db.products, db.syncQueue, async (tx) => {
                 await tx.products.put(updated);
                 await tx.syncQueue.add({
-                    id: `update-${updated.id}-${Date.now()}`,
+                    id: `update-${updated.id}-${crypto.randomUUID()}`,
                     type: "PRODUCT_UPDATE",
                     payload: updated,
                     retries: 0,
@@ -127,6 +127,7 @@ export default function InventoryPage() {
                     <h1 className="page-title">Inventory</h1>
                     <p className="page-subtitle">Manage stock levels and product pricing.</p>
                 </div>
+                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                 <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={16} weight="bold" /> Add Product
                 </button>

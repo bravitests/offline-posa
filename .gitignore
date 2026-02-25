@@ -50,9 +50,9 @@ public/worker-*.js
 *.db
 *.db-journal
 
+# SSL certificates
+certs/
+
 # system
 .gemini/
-.env
-.env.local
-prisma/dev.db
 PR.md

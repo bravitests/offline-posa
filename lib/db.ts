@@ -40,10 +40,17 @@ export class POSDatabase extends Dexie {
 
     constructor() {
         super("POSDatabase");
-        this.version(1).stores({
+        this.version(2).stores({
             products: "id, name, updatedAt, version",
             sales: "id, createdAt, synced",
             syncQueue: "id, type, lastAttempt, failed",
+        }).upgrade(tx => {
+            // Migrate existing syncQueue entries to add failed field
+            return tx.table("syncQueue").toCollection().modify(item => {
+                if (item.failed === undefined) {
+                    item.failed = false;
+                }
+            });
         });
     }
 }

@@ -8,6 +8,13 @@ import { syncEngine } from "@/lib/sync";
 
 type CartItem = { product: LocalProduct; qty: number };
 
+/**
+ * Renders the Point of Sale page allowing product browsing, cart management, and completing sales.
+ *
+ * Manages product loading and periodic refresh, search/filtering, cart state and quantity updates, MPesa reference input, and finalizes sales by recording the sale, updating product stock atomically, and enqueuing a sync task.
+ *
+ * @returns The React element for the POS page.
+ */
 export default function POSPage() {
   const [products, setProducts] = useState<LocalProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,9 +72,13 @@ export default function POSPage() {
         // Add sale
         await tx.sales.add(saleData as any);
 
-        // Update product stock
+        // Update product stock atomically
         for (const i of cart) {
-          await tx.products.update(i.product.id, { stock: i.product.stock - i.qty });
+          const currentProduct = await tx.products.get(i.product.id);
+          if (currentProduct) {
+            const newStock = Math.max(0, currentProduct.stock - i.qty);
+            await tx.products.update(i.product.id, { stock: newStock });
+          }
         }
 
         // Add to sync queue
