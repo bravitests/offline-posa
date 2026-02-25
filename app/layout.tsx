@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
+import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
   title: "Offline-POS — Resilient Point of Sale",
@@ -19,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning>
+        <PWARegister />
         <div className="app-shell">
           <Sidebar />
           <BottomNav />
