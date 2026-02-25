@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { db, type LocalProduct } from "@/lib/db";
 import { Plus, PencilSimple, Trash } from "@phosphor-icons/react";
 import { syncEngine } from "@/lib/sync";
+import AddProductModal from "@/components/AddProductModal";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState<LocalProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<Partial<LocalProduct>>({});
+    const [showAddModal, setShowAddModal] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -76,7 +78,7 @@ export default function InventoryPage() {
                     <h1 className="page-title">Inventory</h1>
                     <p className="page-subtitle">Manage stock levels and product pricing.</p>
                 </div>
-                <button className="btn-primary">
+                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={16} weight="bold" /> Add Product
                 </button>
             </div>
@@ -166,6 +168,12 @@ export default function InventoryPage() {
                     </table>
                 </div>
             )}
+
+            <AddProductModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onProductAdded={(product) => setProducts((prev) => [...prev, product])}
+            />
         </div>
     );
 }
