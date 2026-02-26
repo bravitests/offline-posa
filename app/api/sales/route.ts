@@ -139,6 +139,7 @@ export async function POST(request: Request) {
                         stock: {
                             decrement: item.qty,
                         },
+                        updatedAt: new Date(),
                     },
                 });
 
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: "success", sale });
     } catch (error: any) {
         console.error("Sale sync error:", error);
-        
+
         const errorMsg = error.message || "";
         if (errorMsg.includes("Insufficient stock") || errorMsg.includes("Stock check failed")) {
             return NextResponse.json(
@@ -169,7 +170,7 @@ export async function POST(request: Request) {
                 { status: 422 }
             );
         }
-        
+
         return NextResponse.json(
             { status: "error", message: "Failed to process sale" },
             { status: 500 }

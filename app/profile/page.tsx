@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, SignOut } from "@phosphor-icons/react";
+import SyncBadge from "@/components/SyncBadge";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -43,7 +44,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="profile-actions">
+                <div className="profile-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <SyncBadge />
                     <button className="profile-logout-btn" onClick={handleLogout}>
                         <SignOut size={20} weight="bold" />
                         <span>Sign Out</span>
