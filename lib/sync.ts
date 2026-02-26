@@ -70,14 +70,42 @@ class SyncEngine {
 
     private async syncItem(item: SyncQueueItem): Promise<boolean> {
         try {
-            const endpoint = item.type === "SALE" ? SYNC_ENDPOINTS.SALES : `${SYNC_ENDPOINTS.PRODUCTS}/${item.payload.id}`;
-            const method = item.type === "SALE" ? "POST" : "PUT";
+            let endpoint: string;
+            let method: string;
 
-            const response = await fetch(endpoint, {
+            switch (item.type) {
+                case "SALE":
+                    endpoint = SYNC_ENDPOINTS.SALES;
+                    method = "POST";
+                    break;
+                case "PRODUCT_CREATE":
+                    endpoint = SYNC_ENDPOINTS.PRODUCTS;
+                    method = "POST";
+                    break;
+                case "PRODUCT_UPDATE":
+                    endpoint = `${SYNC_ENDPOINTS.PRODUCTS}/${item.payload.id}`;
+                    method = "PUT";
+                    break;
+                case "PRODUCT_DELETE":
+                    endpoint = `${SYNC_ENDPOINTS.PRODUCTS}/${item.payload.id}`;
+                    method = "DELETE";
+                    break;
+                default:
+                    console.error(`Unknown sync type: ${item.type}`);
+                    return false;
+            }
+
+            const fetchOptions: RequestInit = {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(item.payload),
-            });
+            };
+
+            // DELETE requests don't need a body
+            if (method !== "DELETE") {
+                fetchOptions.body = JSON.stringify(item.payload);
+            }
+
+            const response = await fetch(endpoint, fetchOptions);
 
             if (response.ok) {
                 console.log(`✓ Synced ${item.type}:`, item.id);

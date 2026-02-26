@@ -102,3 +102,28 @@ export async function PUT(
         return NextResponse.json({ status: "error", message: "Internal server error" }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    _request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+
+        // Check if product exists
+        const product = await prisma.product.findUnique({ where: { id } });
+        if (!product) {
+            // Already deleted — idempotent success
+            return NextResponse.json({ status: "success", message: "Product already deleted" });
+        }
+
+        // Delete related sale items first, then the product
+        await prisma.saleItem.deleteMany({ where: { productId: id } });
+        await prisma.product.delete({ where: { id } });
+
+        return NextResponse.json({ status: "success" });
+    } catch (error: any) {
+        console.error("Product delete error:", error);
+        return NextResponse.json({ status: "error", message: "Failed to delete product" }, { status: 500 });
+    }
+}

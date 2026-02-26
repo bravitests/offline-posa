@@ -52,7 +52,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
         await tx.products.add(newProduct);
         await tx.syncQueue.add({
           id: `create-${newProduct.id}-${crypto.randomUUID()}`,
-          type: "PRODUCT_UPDATE",
+          type: "PRODUCT_CREATE",
           payload: newProduct,
           retries: 0,
           lastAttempt: 0,
