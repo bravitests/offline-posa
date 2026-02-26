@@ -56,3 +56,5 @@ certs/
 # system
 .gemini/
 PR.md
+docs/SECURITY_FIXES.md
+

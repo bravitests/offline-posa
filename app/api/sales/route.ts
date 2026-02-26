@@ -56,9 +56,9 @@ export async function POST(request: Request) {
                     { status: 400 }
                 );
             }
-            if (typeof item.price !== "number" || !Number.isFinite(item.price) || item.price <= 0) {
+            if (typeof item.price !== "number" || !Number.isFinite(item.price) || item.price < 0) {
                 return NextResponse.json(
-                    { status: "error", message: "each item price must be a finite positive number" },
+                    { status: "error", message: "each item price must be a finite non-negative number" },
                     { status: 400 }
                 );
             }
@@ -68,6 +68,16 @@ export async function POST(request: Request) {
                     { status: 400 }
                 );
             }
+        }
+
+        // Validate total matches sum of line items
+        const EPSILON = 1e-6;
+        const computedSum = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        if (Math.abs(total - computedSum) > EPSILON) {
+            return NextResponse.json(
+                { status: "error", message: "total mismatch with line items" },
+                { status: 400 }
+            );
         }
 
         // Sales are append-only. No conflict possible.
@@ -88,7 +98,7 @@ export async function POST(request: Request) {
                     id,
                     total,
                     mpesaCode,
-                    createdAt: new Date(createdAt),
+                    createdAt: new Date(timestamp),
                     items: {
                         create: items.map((item: any) => ({
                             productId: item.productId,
