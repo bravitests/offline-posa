@@ -5,6 +5,7 @@ import { db, type LocalProduct } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { MagnifyingGlass, Plus, Minus, ShoppingCart, CheckCircle, Package } from "@phosphor-icons/react";
 import { syncEngine } from "@/lib/sync";
+import toast from "react-hot-toast";
 
 type CartItem = { product: LocalProduct; qty: number };
 
@@ -22,6 +23,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [mpesaCode, setMpesaCode] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -34,17 +36,25 @@ export default function POSPage() {
     return () => clearInterval(iv);
   }, []);
 
+  useEffect(() => {
+    const handleToggleCart = () => setIsCartOpen((prev) => !prev);
+    window.addEventListener("toggleMobileCart", handleToggleCart);
+    return () => window.removeEventListener("toggleMobileCart", handleToggleCart);
+  }, []);
+
   const filtered = useMemo(
     () => products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())),
     [products, query]
   );
 
-  const addToCart = (product: LocalProduct) =>
+  const addToCart = (product: LocalProduct) => {
     setCart((prev) => {
       const found = prev.find((i) => i.product.id === product.id);
       if (found) return prev.map((i) => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, { product, qty: 1 }];
     });
+    toast.success(`Added ${product.name} to order`);
+  };
 
   const updateQty = (id: string, delta: number) =>
     setCart((prev) =>
@@ -90,6 +100,7 @@ export default function POSPage() {
       setCart([]);
       setMpesaCode("");
       setIsSuccess(true);
+      setIsCartOpen(false);
       setTimeout(() => setIsSuccess(false), 3000);
     } catch (err) {
       console.error("Sale completion error:", err);
@@ -156,13 +167,24 @@ export default function POSPage() {
         </section>
 
         {/* ── Cart column ── */}
-        <aside className="cart-panel">
+        <div
+          className={`cart-overlay ${isCartOpen ? "show" : ""}`}
+          onClick={() => setIsCartOpen(false)}
+        />
+        <aside className={`cart-panel ${isCartOpen ? "mobile-open" : ""}`}>
           <div className="cart-header">
             <ShoppingCart size={20} weight="bold" />
             <span>Current Order</span>
             {cartCount > 0 && (
               <div className="cart-count-badge">{cartCount}</div>
             )}
+            <button
+              className="cart-close-btn"
+              onClick={() => setIsCartOpen(false)}
+              style={{ marginLeft: "auto", display: "flex" }}
+            >
+              <Minus size={20} />
+            </button>
           </div>
 
           <div className="cart-items-scroll">

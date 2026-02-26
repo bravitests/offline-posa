@@ -183,15 +183,19 @@ button:disabled {
   flex: 1;
   min-width: 0;
   padding-bottom: var(--bottom-nav-h);
+  padding-top: 60px;
+  /* space for mobile top header */
   /* space for mobile bottom nav */
 }
 
 @media (min-width: 768px) {
   .main-content {
+    padding-top: 0;
     padding-bottom: 0;
     margin-left: var(--sidebar-width);
   }
 }
+
 
 .page-wrap {
   max-width: 1400px;
@@ -241,6 +245,65 @@ button:disabled {
     display: none;
   }
 }
+
+/* Mobile Header */
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--surface-0);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  z-index: 50;
+}
+
+.mobile-header-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-logo-image {
+  border-radius: var(--r-sm);
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  color: var(--text-inverse);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  transition: all 0.2s var(--ease-out);
+}
+
+.mobile-cart-btn:hover {
+  background: var(--primary-hover);
+}
+
+@media (min-width: 768px) {
+  .mobile-header {
+    display: none;
+  }
+}
+
 
 /* Bottom nav – mobile only */
 .bottom-nav {
@@ -675,10 +738,52 @@ button:disabled {
 
 @media (max-width: 1100px) {
   .cart-panel {
-    position: static;
-    max-height: none;
+    position: fixed;
+    top: 60px;
+    /* height of mobile header */
+    right: 0;
+    bottom: var(--bottom-nav-h);
     height: auto;
-    min-height: 400px;
+    max-height: none;
+    width: 100%;
+    max-width: 380px;
+    z-index: 100;
+    border-radius: var(--r-xl) 0 0 var(--r-xl);
+    border-right: none;
+    background: var(--surface-0);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+    transform: translateX(110%);
+    transition: transform 0.3s var(--ease-spring);
+  }
+
+  .cart-panel.mobile-open {
+    transform: translateX(0);
+  }
+}
+
+.cart-overlay {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .cart-overlay {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: var(--bottom-nav-h);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .cart-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -705,6 +810,32 @@ button:disabled {
   align-items: center;
   justify-content: center;
   font-family: 'JetBrains Mono', monospace;
+}
+
+.cart-close-btn {
+  display: none;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  transition: background 0.2s, color 0.2s;
+}
+
+.cart-close-btn:hover {
+  background: var(--surface-1);
+  color: var(--text);
+}
+
+@media (max-width: 1100px) {
+  .cart-close-btn {
+    display: flex !important;
+  }
+
+  .cart-count-badge {
+    margin-left: 0;
+  }
 }
 
 .cart-items-scroll {
@@ -796,6 +927,66 @@ button:disabled {
   color: var(--text-dim);
   font-size: 0.875rem;
   text-align: center;
+}
+
+/* ─────────────────────────────────────────
+   PROFILE PAGE
+───────────────────────────────────────── */
+.profile-card {
+  padding: 2rem;
+  border-radius: var(--r-xl);
+  max-width: 500px;
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 100px;
+  background: var(--primary-dim);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-name {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-role {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.profile-actions {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+
+.profile-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--error);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--error-dim);
+  width: 100%;
+  justify-content: center;
+}
+
+.profile-logout-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
 }
 
 .cart-footer {
@@ -1398,8 +1589,13 @@ button:disabled {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -1417,6 +1613,7 @@ button:disabled {
     opacity: 0;
     transform: translateY(16px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
