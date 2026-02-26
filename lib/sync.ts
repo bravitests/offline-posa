@@ -33,9 +33,9 @@ class SyncEngine {
                 const success = await this.syncItem(item);
                 if (success) {
                     await db.syncQueue.delete(item.id);
-                    // Mark sale as synced if it's a sale
+                    // Mark sale as synced
                     if (item.type === "SALE") {
-                        await db.sales.update(item.id, { synced: true });
+                        await db.sales.update(item.payload.id, { synced: true });
                     }
                 } else {
                     const nextRetry = item.retries + 1;
@@ -92,8 +92,8 @@ class SyncEngine {
                     let updatedAt: number;
                     try {
                         const rawTimestamp = result.serverData.updatedAt;
-                        updatedAt = rawTimestamp 
-                            ? new Date(rawTimestamp).getTime() 
+                        updatedAt = rawTimestamp
+                            ? new Date(rawTimestamp).getTime()
                             : Date.now();
                         // Fallback if conversion resulted in NaN
                         if (!Number.isFinite(updatedAt)) {
@@ -102,7 +102,7 @@ class SyncEngine {
                     } catch {
                         updatedAt = Date.now();
                     }
-                    
+
                     await db.products.put({
                         ...result.serverData,
                         updatedAt

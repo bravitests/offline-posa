@@ -26,7 +26,7 @@ export interface LocalSale {
 
 export interface SyncQueueItem {
     id: string;
-    type: "SALE" | "PRODUCT_UPDATE";
+    type: "SALE" | "PRODUCT_UPDATE" | "PRODUCT_CREATE" | "PRODUCT_DELETE";
     payload: any;
     retries: number;
     lastAttempt: number;
