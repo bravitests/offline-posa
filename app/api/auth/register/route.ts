@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 /**
  * Handle registration requests by validating input, creating a new user, and returning the created user's basic info.
@@ -12,8 +13,23 @@ import bcrypt from "bcryptjs";
  */
 export async function POST(request: Request) {
     try {
-        const { fullName, phoneNumber, passcode, repeatPasscode } = await request.json();
+        let { fullName, phoneNumber, passcode, repeatPasscode } = await request.json();
 
+        // Type validation and normalization
+        if (typeof fullName !== "string" || typeof phoneNumber !== "string" || 
+            typeof passcode !== "string" || typeof repeatPasscode !== "string") {
+            return NextResponse.json(
+                { status: "error", message: "All fields must be strings" },
+                { status: 400 }
+            );
+        }
+
+        fullName = fullName.trim();
+        phoneNumber = phoneNumber.replace(/\D/g, "");
+        passcode = passcode.trim();
+        repeatPasscode = repeatPasscode.trim();
+
+        // Validation after normalization
         if (!fullName || !phoneNumber || !passcode || !repeatPasscode) {
             return NextResponse.json(
                 { status: "error", message: "All fields are required" },
@@ -21,9 +37,9 @@ export async function POST(request: Request) {
             );
         }
 
-        if (passcode !== repeatPasscode) {
+        if (phoneNumber.length !== 10) {
             return NextResponse.json(
-                { status: "error", message: "Passcodes do not match" },
+                { status: "error", message: "Phone number must be exactly 10 digits" },
                 { status: 400 }
             );
         }
@@ -35,14 +51,10 @@ export async function POST(request: Request) {
             );
         }
 
-        const existingUser = await prisma.user.findUnique({
-            where: { phoneNumber },
-        });
-
-        if (existingUser) {
+        if (passcode !== repeatPasscode) {
             return NextResponse.json(
-                { status: "error", message: "Phone number already registered" },
-                { status: 409 }
+                { status: "error", message: "Passcodes do not match" },
+                { status: 400 }
             );
         }
 
@@ -66,8 +78,16 @@ export async function POST(request: Request) {
         });
     } catch (error: any) {
         console.error("Registration error:", error);
+        
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            return NextResponse.json(
+                { status: "error", message: "Phone number already registered" },
+                { status: 409 }
+            );
+        }
+        
         return NextResponse.json(
-            { status: "error", message: error.message || "Registration failed" },
+            { status: "error", message: "Registration failed" },
             { status: 500 }
         );
     }

@@ -15,7 +15,7 @@ export default function PWARegister() {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
-        .then((registration) => {
+        .then(() => {
           console.log("✓ Service Worker registered");
         })
         .catch((error) => {

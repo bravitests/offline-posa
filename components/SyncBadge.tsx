@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { CloudCheck, CloudArrowUp, CloudSlash, ArrowsClockwise } from "@phosphor-icons/react";
 import { db } from "@/lib/db";
 
@@ -25,25 +25,25 @@ const STATUS_CONFIG: Record<SyncStatus, { icon: any; color: string; text: (n: nu
 export default function SyncBadge() {
     const [status, setStatus] = useState<SyncStatus>("synced");
     const [pendingCount, setPendingCount] = useState(0);
-    let updateToken = 0;
+    const updateTokenRef = useRef(0);
 
     useEffect(() => {
         const update = async () => {
-            const currentToken = ++updateToken;
+            const currentToken = ++updateTokenRef.current;
             try {
                 if (!navigator.onLine) { 
-                    if (currentToken === updateToken) setStatus("offline"); 
+                    if (currentToken === updateTokenRef.current) setStatus("offline"); 
                     return; 
                 }
-                if (currentToken === updateToken) setStatus("syncing");
+                if (currentToken === updateTokenRef.current) setStatus("syncing");
                 const count = await db.syncQueue.count();
-                if (currentToken === updateToken) {
+                if (currentToken === updateTokenRef.current) {
                     setPendingCount(count);
                     setStatus(count > 0 ? "pending" : "synced");
                 }
             } catch (error) {
                 console.error("SyncBadge update error:", error);
-                if (currentToken === updateToken) setStatus("offline");
+                if (currentToken === updateTokenRef.current) setStatus("offline");
             }
         };
 

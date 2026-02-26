@@ -4,10 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 /**
- * Protects routes by checking for a "user" entry in localStorage, redirecting to login or home as needed, and conditionally rendering children.
- *
- * While the authentication check is in progress, renders a full-viewport loading skeleton. If authentication succeeds, renders the provided children; if not, renders nothing after redirects.
- *
+ * AuthGuard - Client-side route protection for UX
+ * 
+ * SECURITY NOTE: This component uses localStorage for offline-first functionality.
+ * It provides UI-level protection but is NOT secure against determined attackers.
+ * 
+ * For production:
+ * - Keep this component for offline UX and client-side routing
+ * - Add HTTP-only cookie validation in API routes (see SECURITY.md)
+ * - Implement server middleware for additional route protection
+ * - localStorage allows offline access to cached data (required for offline-first)
+ * 
+ * This is a known limitation documented in PR.md and SECURITY.md.
+ * 
  * @param children - The component tree to render when the user is authenticated
  * @returns The `children` when authenticated, a full-screen loading skeleton while checking authentication, or `null` if unauthenticated after redirects
  */
