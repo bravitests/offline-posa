@@ -149,6 +149,7 @@ class SyncEngine {
 
     private async pullUpdates() {
         try {
+            // Pull product updates
             const lastProductUpdate = await db.products.orderBy("updatedAt").last();
             const productTimestamp = lastProductUpdate?.updatedAt || 0;
 
@@ -161,6 +162,31 @@ class SyncEngine {
                         updatedAt: new Date(p.updatedAt).getTime()
                     })));
                     console.log(`✓ Pulled ${newProducts.length} product updates`);
+                }
+            }
+
+            // Pull sales updates
+            const lastSale = await db.sales.orderBy("createdAt").last();
+            const saleTimestamp = lastSale?.createdAt || 0;
+
+            const salesRes = await fetch(`${SYNC_ENDPOINTS.SALES}?updatedAfter=${saleTimestamp}`);
+            if (salesRes.ok) {
+                const serverSales = await salesRes.json();
+                if (serverSales.length > 0) {
+                    const localSales: LocalSale[] = serverSales.map((s: any) => ({
+                        id: s.id,
+                        total: s.total,
+                        mpesaCode: s.mpesaCode || undefined,
+                        createdAt: new Date(s.createdAt).getTime(),
+                        synced: true,
+                        items: s.items.map((i: any) => ({
+                            productId: i.productId,
+                            qty: i.qty,
+                            price: i.price,
+                        })),
+                    }));
+                    await db.sales.bulkPut(localSales);
+                    console.log(`✓ Pulled ${localSales.length} sales`);
                 }
             }
         } catch (error) {
